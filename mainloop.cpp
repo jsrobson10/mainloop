@@ -15,7 +15,9 @@ struct ActionReg
 {
 	void (*reg)(int*);
 	unsigned long millis;
+	unsigned long millis_start;
 	bool active = false;
+	bool repeat;
 	int *args;
 };
 
@@ -106,11 +108,23 @@ void mainloopDoTick()
 		if(reg_actions[i].active)
 		{
 			// Is it time for execution
-			if(reg_actions[i].millis <= 1)
+			if(reg_actions[i].millis == 1)
 			{
 				// Execute the registered function
 				reg_actions[i].reg(reg_actions[i].args);
-				reg_actions.erase(reg_actions.begin()+i);
+
+				// Is the function set to repeat
+				if(reg_actions[i].repeat)
+				{
+					// Reset the actions timer
+					reg_actions[i].millis = reg_actions[i].millis_start;
+				}
+
+				else
+				{
+					// Erase the action
+					reg_actions.erase(reg_actions.begin()+i);
+				}
 			}
 
 			else
@@ -152,14 +166,16 @@ void mainloopOnLate(void reg())
 	on_late_reg = true;
 }
 
-void mainloopRegAction(void reg(int*), unsigned long millis, int *args)
+void mainloopRegAction(void reg(int*), unsigned long millis, int *args, bool repeat)
 {
 	// Setup the registered function
 	ActionReg r;
 	r.reg = reg;
 	r.millis = millis;
+	r.millis_start = millis;
 	r.args = args;
 	r.active = true;
+	r.repeat = repeat;
 
 	// Add this to the list
 	reg_actions.push_back(r);
