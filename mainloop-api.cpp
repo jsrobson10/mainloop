@@ -10,6 +10,7 @@
 #include <time.h>
 #include <vector>
 #include <iostream>
+#include <string.h>
 
 struct ActionReg
 {
@@ -52,17 +53,43 @@ unsigned long getMillis()
 	#endif
 }
 
-int mainloopGen()
+void mainloopResetTiming(int id)
 {
-	// Create a new loop
-	loops.push_back(*new Mainloop);
-
-	// Get the id
-	int id = loops.size()-1;
-
 	// Get the start time
-	loops[id].clock_start = getMillis();
-	loops[id].clock_realtime = getMillis();
+	loops[id].clock_start = getMillis()-1;
+	loops[id].clock_realtime = getMillis()-1;
+}
+
+int mainloopGen(int id)
+{
+	// Is the id unset
+	if(id == -1)
+	{
+		// Create a new loop
+		loops.push_back(*new Mainloop);
+
+		// Get the new id
+		id = loops.size()-1;
+	}
+
+	else
+	{
+		// Is the forced id not in range
+		if(id >= loops.size())
+		{
+			// Resize the vector
+			loops.resize(id+1);
+		}
+
+		// Set the forced id
+		loops[id] = *new Mainloop;
+	}
+
+	// Set to zero
+	memset(&loops[id], 0, sizeof(Mainloop));
+
+	// Reset the timing
+	mainloopResetTiming(id);
 
 	// Return the id
 	return id;
@@ -158,6 +185,9 @@ void mainloopDoMainloop(int id)
 	// Register this as true
 	loops[id].running = true;
 
+	// Reset the timing
+	mainloopResetTiming(id);
+
 	// Start the mainloop
 	while(loops[id].running)
 	{
@@ -199,4 +229,13 @@ void mainloopStop(int id)
 {
 	// Stop the mainloop
 	loops[id].running = false;
+}
+
+void mainloopFree(int id)
+{
+	// Stop the mainloop
+	mainloopStop(id);
+
+	// Free the mainloop
+	//free(&loops[id]);
 }
